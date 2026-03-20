@@ -1,0 +1,78 @@
+[DEFAULT]
+banaction = firewallcmd-ipset
+banaction_allports = firewallcmd-ipset[type=allports]
+backend = systemd
+
+# Excluir IPs
+ignoreip = 127.0.0.1/8 ::1 192.168.1.0/24 192.168.2.0/24 10.0.0.0/23 172.16.12.0/24 192.104.216.160/28 209.13.114.48/28
+
+findtime = 600
+bantime = 24h
+maxretry = 10
+
+# -------------------------
+# SERVICIOS BASE
+# -------------------------
+[sshd]
+enabled = true
+maxretry = 3
+
+[webmin-auth]
+enabled = true
+
+# -------------------------
+# NGINX - MALFORMED / ERRORES
+# -------------------------
+# Atrapa peticiones mal formadas (400) en el error.log
+[nginx-bad-request]
+enabled  = true
+port     = http,https
+filter   = nginx-bad-request
+logpath  = /var/log/nginx/access.log
+maxretry = 5
+
+
+# Bloquea al instante a quien busque archivos sensibles (.env, .git, etc)
+[nginx-scanners]
+enabled  = true
+port     = http,https
+filter   = nginx-scanners
+logpath  = /var/log/nginx/access.log
+maxretry = 3
+findtime = 1d
+bantime  = 1w
+
+# Reemplaza a nginx-404-abuse. Atrapa ráfagas de 404 o 444 (como tus logs de /api/auth)
+[nginx-scan]
+enabled  = true
+port     = http,https
+filter   = nginx-scan
+logpath  = /var/log/nginx/access.log
+maxretry = 10
+findtime = 1d
+bantime  = 1w
+
+# Atrapa herramientas conocidas (sqlmap, nmap, etc)
+[nginx-bad-bots]
+enabled  = true
+port     = http,https
+filter   = nginx-badbots
+logpath  = /var/log/nginx/access.log
+maxretry = 2
+
+# Rate limit genuino (requiere ngx_http_limit_req_module en Nginx)
+[nginx-limit-req]
+enabled  = true
+port     = http,https
+filter   = nginx-limit-req
+logpath  = /var/log/nginx/error.log
+maxretry = 5
+findtime = 60
+
+# Protección estricta para WordPress (wp-admin, xmlrpc)
+[nginx-wp-proxy-protect]
+enabled  = true
+port     = http,https
+filter   = nginx-wp-custom-403
+logpath  = /var/log/nginx/access.log
+maxretry = 3
